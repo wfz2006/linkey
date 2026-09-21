@@ -1,0 +1,24 @@
+{
+  "name": "Linkey",
+  "short_name": "Linkey",
+  "description": "连接每一刻 · Linkey 全自适应即时通讯",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090C12",
+  "theme_color": "#00C6FF",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/app-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

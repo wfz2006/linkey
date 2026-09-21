@@ -1,0 +1,24 @@
+{
+  "name": "linkey",
+  "version": "4.2.0",
+  "description": "Linkey - 全自适应现代即时通讯与空间社交系统 (Native Node.js & SQLite, Zero Dependency)",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "admin": "node admin/admin.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "keywords": [
+    "linkey",
+    "instant-messaging",
+    "websocket",
+    "sqlite",
+    "pwa",
+    "qzone",
+    "responsive"
+  ],
+  "author": "Linkey Team",
+  "license": "MIT"
+}

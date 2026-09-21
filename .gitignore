@@ -1,0 +1,44 @@
+# Logs & Runtime Dumps
+*.log
+npm-debug.log*
+yarn-debug.log*
+logs/
+test-logs/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# SQLite Databases & Temporary Journals
+test-*.db
+test-*.db-journal
+chat.db
+chat.db-journal
+*.db
+*.db-journal
+
+# Temp & build artifacts
+*.tmp
+tmp/
+.temp/
+.superpowers/
+
+# FastQQ Admin Config & Backups
+admin-config.json
+backups/
+uploads/
+
+# Build output (regenerate with: scripts/build_all.py)
+dist/
+public-url.json
+FastQQ.apk
+cloudflared.exe
+public/downloads/
+scripts/apk-signing-key.pem
+
+# Local ad-hoc API probe outputs
+_t*.json
+_test_admin_api.py
+
+# Node modules
+node_modules/

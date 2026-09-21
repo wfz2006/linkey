@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Linkey · 连接每一刻</title>
+  <meta name="description" content="Linkey 全自适应现代即时通讯软件，开箱即用，支持电脑端与手机端秒速畅聊。">
+  <meta name="theme-color" content="#090D16">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/png" href="/app-icon-192.png">
+  <link rel="apple-touch-icon" href="/app-icon-192.png">
+  <link rel="stylesheet" href="/css/style.css?v=4.3.2-scrollable">
+</head>
+<body>
+  <!-- 环境光斑层（视差由 effects.js 驱动） -->
+  <div class="ambient-orbs" aria-hidden="true"></div>
+
+  <!-- ==========================================================================
+       1. AUTH VIEW (LOGIN & REGISTRATION)
+       ========================================================================== -->
+  <div id="authView" class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="qq-brand-icon">
+          <img class="linkey-brand-mark" src="/app-icon-192.png" alt="Linkey">
+        </div>
+        <h1 id="authTitle">Linkey</h1>
+        <p>连接每一刻 · 全自适应流光版</p>
+      </div>
+
+      <div class="auth-tabs">
+        <!-- 液态滑动指示器：由 app.js 调用 effects.moveIndicator 驱动 -->
+        <div class="auth-tab-indicator" aria-hidden="true"></div>
+        <div id="tabLogin" class="auth-tab active">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          <span>账号登录</span>
+        </div>
+        <div id="tabRegister" class="auth-tab">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+          <span>新用户注册</span>
+        </div>
+      </div>
+
+      <form id="authForm">
+        <div class="form-group">
+          <label class="form-label" for="authUsername">账号 / 用户名</label>
+          <div class="input-with-icon">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <input type="text" id="authUsername" class="form-input" placeholder="输入账号或用户名" required autocomplete="username">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="authPassword">登录密码</label>
+          <div class="input-with-icon">
+            <svg class="svg-icon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <input type="password" id="authPassword" class="form-input" placeholder="输入登录密码" required autocomplete="current-password">
+          </div>
+        </div>
+
+        <div id="registerFields" style="display: none;">
+          <div class="form-group">
+            <label class="form-label" for="authNickname">昵称</label>
+            <div class="input-with-icon">
+              <svg class="svg-icon" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+              <input type="text" id="authNickname" class="form-input" placeholder="输入您的昵称">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="authBio">个性签名</label>
+            <div class="input-with-icon">
+              <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              <input type="text" id="authBio" class="form-input" placeholder="展示你的个性签名 (选填)...">
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" id="authSubmitBtn" class="btn-primary">
+          <span id="authBtnText">立即进入 Linkey</span>
+          <svg class="svg-icon" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </form>
+
+      <!-- 快捷体验账号（玻璃小胶囊，一键登录演示用户） -->
+      <div class="quick-users">
+        <div class="quick-users-title">快捷体验账号</div>
+        <div id="quickUsersGrid" class="quick-users-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       2. MAIN APP WORKSPACE
+       ========================================================================== -->
+  <div id="appView" class="app-container" style="display: none;">
+    
+    <!-- DESKTOP SLIM NAV (Left 72px) -->
+    <nav class="app-nav">
+      <div id="navUserProfile" class="nav-user-avatar" title="点击查看与编辑个人资料" style="cursor: pointer;" onclick="window.__openProfileModal && window.__openProfileModal()">
+        <img id="navAvatarImg" src="" alt="头像" onerror="this.onerror=null; if(window.__getSafeAvatar) this.src=window.__getSafeAvatar('', 'Q');">
+        <span id="navStatusDot" class="status-dot online"></span>
+      </div>
+
+      <div class="nav-links">
+        <!-- 液态胶囊指示器：由 app.js switchTab 调用 effects.moveIndicator 驱动 -->
+        <div class="nav-liquid-indicator" aria-hidden="true"></div>
+        <button id="navTabChats" class="nav-btn active" title="消息 (Chats)">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </button>
+        <button id="navTabContacts" class="nav-btn" title="联系人 (Contacts)">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </button>
+        <button id="navTabZone" class="nav-btn" title="空间动态 (QQ Zone)">
+          <svg class="svg-icon" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </button>
+        <button id="navMobileSyncBtn" class="nav-btn" title="手机端扫码使用 / 添加到桌面">
+          <svg class="svg-icon" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="nav-bottom">
+        <button id="navMuteToggle" class="nav-btn" title="切换 QQ 消息提示音">
+          <svg id="navMuteIcon" class="svg-icon" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+        </button>
+        <button id="navLogoutBtn" class="nav-btn" title="退出登录" style="color: var(--danger);">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </nav>
+
+    <!-- SIDEBAR COLUMN (320px) -->
+    <aside class="app-sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-top">
+          <h2 id="sidebarTitleText" class="sidebar-title">消息</h2>
+          <div class="header-actions">
+            <button id="btnNewDirectChat" class="icon-btn" title="加好友 / 发起单聊">
+              <svg class="svg-icon" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+            </button>
+            <button id="btnNewGroupChat" class="icon-btn" title="创建群聊">
+              <svg class="svg-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="11" x2="19" y2="17"/><line x1="22" y1="14" x2="16" y2="14"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="search-box">
+          <svg class="search-icon svg-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="searchInput" placeholder="搜索 QQ 号、好友、群聊...">
+        </div>
+      </div>
+
+      <!-- PANE 1: RECENT CHATS -->
+      <div id="sidebarChatsPane" class="sidebar-view-pane active">
+        <div id="conversationList">
+          <!-- Dynamically injected conversation cards -->
+        </div>
+      </div>
+
+      <!-- PANE 2: CONTACTS (真实好友体系与群聊) -->
+      <div id="sidebarContactsPane" class="sidebar-view-pane">
+        <div class="contacts-action-bar">
+          <button id="btnOpenAddFriendModal" class="contact-action-btn btn-primary" type="button">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+            <span>添加好友</span>
+          </button>
+          <button id="btnNewFriendRequests" class="contact-action-btn btn-secondary" type="button">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span>新的朋友</span>
+            <span id="badgeNewFriendReqs" class="friend-req-badge" style="display: none;">0</span>
+          </button>
+        </div>
+
+        <!-- 联系人分组 1：特别关心（QQ 经典，默认展开，分组头蓝色高亮） -->
+        <div class="contact-group open" data-group="special">
+          <div class="contact-group-header special">
+            <span class="arrow">▶</span>
+            <span>❤️ 特别关心 (<span id="countSpecial">0</span>)</span>
+          </div>
+          <div id="groupListSpecial" class="contact-group-body"></div>
+        </div>
+
+        <!-- 联系人分组 2：我的好友（默认展开） -->
+        <div class="contact-group open" data-group="friends">
+          <div class="contact-group-header">
+            <span class="arrow">▶</span>
+            <span>我的好友 (<span id="countFriends">0</span>)</span>
+          </div>
+          <div id="groupListFriends" class="contact-group-body"></div>
+        </div>
+
+        <!-- 联系人分组 3：群聊（默认折叠，点击分组头展开） -->
+        <div class="contact-group" data-group="groups">
+          <div class="contact-group-header">
+            <span class="arrow">▶</span>
+            <span>群聊 (<span id="countGroups">0</span>)</span>
+          </div>
+          <div id="groupListGroups" class="contact-group-body"></div>
+        </div>
+      </div>
+
+      <!-- PANE 3: QQ ZONE (空间动态) -->
+      <div id="sidebarZonePane" class="sidebar-view-pane">
+        <div class="zone-container">
+          <!-- Filter Header when viewing specific user zone -->
+          <div id="zoneFilterHeader" style="display: none; align-items: center; justify-content: space-between; background: rgba(0, 198, 255, 0.12); border: 1px solid rgba(0, 242, 254, 0.3); border-radius: var(--radius-md); padding: 8px 12px; margin-bottom: 12px;">
+            <div style="font-size: 13px; font-weight: 600; color: #00F2FE; display: flex; align-items: center; gap: 6px;">
+              <span>👤</span>
+              <span id="zoneFilterUserName">好友空间</span>
+            </div>
+            <button id="btnClearZoneFilter" class="btn-secondary" style="height: 28px; padding: 0 10px; font-size: 12px;">返回全部动态</button>
+          </div>
+
+          <div class="zone-publisher">
+            <textarea id="zoneInputText" class="zone-input" placeholder="发表今天的新鲜事说说..."></textarea>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+              <button id="btnZoneSelectPhotos" class="tool-btn" type="button" style="font-size: 12px; height: 28px;">
+                <svg class="svg-icon" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <span>配图</span>
+              </button>
+              <input type="file" id="zonePhotoFileInput" accept="image/*" multiple style="display: none;">
+              <button id="btnPublishZonePost" class="btn-primary" style="width: auto; height: 32px; padding: 0 16px; font-size: 12.5px;">发表说说</button>
+            </div>
+            <div id="zonePostImagePreviews" style="display: none; flex-wrap: wrap; gap: 6px; margin-top: 8px;"></div>
+          </div>
+          <div id="zonePostsContainer" style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Zone posts injected here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- MOBILE BOTTOM NAVIGATION -->
+      <div class="mobile-bottom-bar">
+        <button id="mobileTabChats" class="mobile-tab-btn active">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span>消息</span>
+        </button>
+        <button id="mobileTabContacts" class="mobile-tab-btn">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>联系人</span>
+        </button>
+        <button id="mobileTabZone" class="mobile-tab-btn">
+          <svg class="svg-icon" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span>空间</span>
+        </button>
+        <button id="mobileTabProfile" class="mobile-tab-btn">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>我的</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- CHAT MAIN PANEL -->
+    <main id="chatMain" class="app-chat">
+      <!-- EMPTY STATE -->
+      <div id="chatEmptyPlaceholder" class="chat-empty">
+        <svg class="chat-empty-icon svg-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <h3 style="font-size: 16px; color: var(--text-primary); margin-bottom: 6px;">开启即时畅聊</h3>
+        <p style="font-size: 13px;">点击左侧联系人或会话，即刻开启全端秒速对话</p>
+      </div>
+
+      <!-- ACTIVE CHAT WINDOW -->
+      <div id="chatActiveWindow" class="chat-active-window" style="display: none;">
+        <!-- CHAT HEADER -->
+        <div class="chat-header">
+          <div class="chat-header-left">
+            <button id="btnMobileBack" class="mobile-back-btn" title="返回消息列表">
+              <svg class="svg-icon" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            </button>
+            <div class="conv-avatar-wrap" style="width: 38px; height: 38px;">
+              <img id="chatHeaderAvatar" class="conv-avatar" src="" alt="avatar">
+            </div>
+            <div class="chat-header-info">
+              <div class="chat-header-name-row">
+                <span id="chatHeaderTitle" class="chat-header-name"></span>
+                <span id="chatHeaderLevelTag" class="qq-level-tag"></span>
+              </div>
+              <span id="chatHeaderStatus" class="chat-header-status"></span>
+            </div>
+          </div>
+          <div class="chat-header-right" style="display: flex; gap: 8px;">
+            <button id="btnSearchChatMessages" class="icon-btn" title="搜索聊天记录">
+              <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </button>
+            <button id="btnHeaderPoke" class="icon-btn" title="戳一戳">
+              <svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+            </button>
+            <button id="btnGroupSettings" class="icon-btn" title="群管理与成员" style="display: none;">
+              <svg class="svg-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- INLINE MESSAGE SEARCH BAR (HIDDEN BY DEFAULT) -->
+        <div id="chatMessageSearchBar" class="chat-search-bar" style="display: none;">
+          <svg class="svg-icon search-bar-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="chatSearchInput" placeholder="在当前会话搜索聊天内容...">
+          <button id="btnCloseChatSearch" class="icon-btn" title="关闭搜索">
+            <svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <!-- GROUP NOTICE BANNER (FOR GROUPS) -->
+        <div id="groupNoticeBanner" class="group-notice-banner" style="display: none;">
+          <span class="notice-icon">📢</span>
+          <span id="groupNoticeText" class="notice-text">群公告</span>
+          <button id="btnEditNoticeFast" class="notice-edit-btn" style="display: none;">编辑</button>
+        </div>
+
+        <!-- MESSAGES CONTAINER (SUPPORT INFINITE SCROLL / PULL TO LOAD MORE) -->
+        <div id="messagesContainer" class="messages-container">
+          <div id="messagesLoadingTop" class="messages-loading-top" style="display: none;">
+            <span class="spinner-small"></span> 正在加载更早历史消息...
+          </div>
+          <!-- Dynamically injected message bubbles -->
+        </div>
+
+        <!-- CHAT INPUT DOCK -->
+        <div class="chat-input-area">
+          <!-- FLOATING QUOTE REPLY BAR -->
+          <div id="quoteReplyBar" class="quote-reply-bar" style="display: none;">
+            <div class="quote-bar-content">
+              <span class="quote-bar-user" id="quoteReplyUser">回复 Alice:</span>
+              <span class="quote-bar-text" id="quoteReplySnippet">"消息内容..."</span>
+            </div>
+            <button id="btnCancelQuoteReply" class="quote-bar-cancel" title="取消回复">✕</button>
+          </div>
+
+          <div class="chat-toolbar">
+            <button id="btnEmojiToggle" class="tool-btn" title="黄脸表情包">
+              <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+              <span class="tool-btn-label">表情</span>
+            </button>
+            <button id="btnSendImage" class="tool-btn" title="发送图片">
+              <svg class="svg-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <span class="tool-btn-label">图片</span>
+            </button>
+            <button id="btnSendFile" class="tool-btn" title="发送文件 / 附件">
+              <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+              <span class="tool-btn-label">文件</span>
+            </button>
+            <button id="btnToolbarPoke" class="tool-btn" title="戳一戳">
+              <svg class="svg-icon" viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+              <span class="tool-btn-label">戳一戳</span>
+            </button>
+          </div>
+
+          <div class="input-row">
+            <textarea id="chatInput" class="chat-textarea" placeholder="输入消息 (Enter 发送，Shift + Enter 换行)..." rows="1"></textarea>
+            <button id="btnSendMessage" class="send-btn" title="发送消息">
+              <svg class="svg-icon" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+
+          <!-- HIDDEN FILE INPUTS -->
+          <input type="file" id="imageFileInput" accept="image/*" style="display: none;">
+          <input type="file" id="generalFileInput" style="display: none;">
+
+          <!-- EMOJI POPOVER DRAWER -->
+          <div id="emojiPopover" class="emoji-popover" style="display: none;"></div>
+          <!-- MENTIONS AUTOCOMPLETE POPUP -->
+          <div id="mentionsPopup" class="mentions-popup" style="display: none;"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ==========================================================================
+       3. POPUP MODALS
+       ========================================================================== -->
+  <!-- MODAL 1: ADD DIRECT FRIEND / CHAT -->
+  <div id="modalDirectChat" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">加好友 / 发起私聊</h3>
+        <button class="icon-btn close-modal">
+          <svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="search-box" style="margin-bottom: 12px;">
+          <svg class="search-icon svg-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="modalUserSearchInput" placeholder="输入用户名或 QQ 号搜索好友...">
+        </div>
+        <div id="userSearchResults" style="max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: CREATE GROUP CHAT -->
+  <div id="modalGroupChat" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">创建 QQ 群聊</h3>
+        <button class="icon-btn close-modal">
+          <svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="groupNameInput">群名称</label>
+          <input type="text" id="groupNameInput" class="form-input" placeholder="输入新群聊名称 (如: 极速技术交流群)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">选择邀请加入的成员</label>
+          <div id="groupMemberList" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary close-modal">取消</button>
+        <button id="btnConfirmCreateGroup" class="btn-primary" style="width: auto; height: 38px; padding: 0 20px;">立即建群</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: USER PROFILE & CUSTOM AVATAR SETTINGS -->
+  <div id="modalProfile" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 460px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header">
+        <h3 class="modal-title">个人资料与头像设置</h3>
+        <button class="icon-btn close-modal">
+          <svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- 1. AVATAR EDIT SECTION -->
+        <div class="avatar-edit-section" style="display: flex; gap: 16px; align-items: center; margin-bottom: 18px; padding: 14px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid var(--glass-border);">
+          <div style="position: relative; cursor: pointer;" title="点击上传本地新头像" onclick="document.getElementById('profileAvatarFileInput').click()">
+            <img id="profilePreviewAvatar" src="" style="width: 72px; height: 72px; border-radius: 50%; border: 3px solid #00F2FE; object-fit: cover; background: #1a2233; display: block;" alt="avatar">
+            <div style="position: absolute; bottom: 0; right: 0; background: #0072FF; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; border: 2px solid #090D16;" title="更换头像">📷</div>
+          </div>
+          <div style="flex: 1;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <h4 id="profileNicknameLabel" style="font-size: 16px; font-weight: 700; margin: 0;"></h4>
+              <span id="profileQQLabel" style="font-size: 12px; color: var(--text-muted); font-family: monospace;"></span>
+            </div>
+            <div id="profileLevelDisplay" style="font-size: 12px; color: #FFB703; margin-top: 4px;"></div>
+            <div style="display: flex; gap: 8px; margin-top: 10px;">
+              <button type="button" class="btn-primary btn-xs" style="font-size: 12px; padding: 4px 10px;" onclick="document.getElementById('profileAvatarFileInput').click()">📁 上传图片</button>
+              <button type="button" class="btn-secondary btn-xs" id="btnRandomAvatar" style="font-size: 12px; padding: 4px 10px;">🎲 随机头像</button>
+            </div>
+            <input type="file" id="profileAvatarFileInput" accept="image/*" style="display: none;">
+            <input type="hidden" id="profileAvatarUrlInput">
+          </div>
+        </div>
+
+        <!-- 2. PRESET CLASSIC AVATAR PALETTE (12 款经典预设头像) -->
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>🎨 经典头像库 (点击即换)</span>
+            <span style="font-size: 11px; color: var(--text-muted);">亦支持本地上传任意图片</span>
+          </label>
+          <div id="presetAvatarGrid" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 10px; border: 1px solid var(--glass-border-light);">
+            <!-- Populated dynamically with 12 presets in app.js -->
+          </div>
+        </div>
+
+        <!-- 3. NICKNAME & BIO & STATUS -->
+        <div class="form-group">
+          <label class="form-label" for="profileNicknameInput">修改昵称</label>
+          <input type="text" id="profileNicknameInput" class="form-input" placeholder="输入您的 QQ 昵称">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="profileBioInput">修改个性签名</label>
+          <input type="text" id="profileBioInput" class="form-input" placeholder="展示你的个性签名...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">在线状态</label>
+          <div id="statusPicker" class="glass-segmented-control">
+            <div class="status-option active" data-status="online">
+              <span class="status-indicator online"></span>
+              <span>在线</span>
+            </div>
+            <div class="status-option" data-status="away">
+              <span class="status-indicator away"></span>
+              <span>离开</span>
+            </div>
+            <div class="status-option" data-status="offline">
+              <span class="status-indicator offline"></span>
+              <span>隐身</span>
+            </div>
+          </div>
+          <input type="hidden" id="profileStatusInput" value="online">
+        </div>
+
+        <!-- 4. SECURITY -->
+        <div class="form-group" style="margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--glass-border-light);">
+          <label class="form-label">账号与安全设置</label>
+          <div style="display: flex; gap: 8px;">
+            <button id="btnOpenChangePwdModal" class="btn-secondary" type="button" style="flex: 1; height: 34px; font-size: 12.5px;">
+              <span>🔒 修改密码</span>
+            </button>
+            <button id="btnOpenDeleteAccountModal" class="btn-secondary" type="button" style="flex: 1; height: 34px; font-size: 12.5px; color: #EF4444; border-color: rgba(239, 68, 68, 0.3);">
+              <span>⚠️ 注销账号</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btnLogoutFromProfile" class="btn-secondary" type="button" style="margin-right: auto; color: #EF4444; border-color: rgba(239, 68, 68, 0.3);">退出登录</button>
+        <button class="btn-secondary close-modal">取消</button>
+        <button id="btnSaveProfile" class="btn-primary" style="width: auto; height: 38px; padding: 0 20px;">保存修改</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: DELETE ACCOUNT (注销账号) -->
+  <div id="modalDeleteAccount" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 380px;">
+      <div class="modal-header">
+        <h3 class="modal-title" style="color: #EF4444;">⚠️ 永久注销账号</h3>
+        <button class="icon-btn close-modal"><svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px;">
+          注销后，您的账号信息、所有好友关系、群聊记录及空间说说将被<strong>永久物理删除</strong>，且无法恢复。
+        </p>
+        <div class="form-group">
+          <label class="form-label" for="deleteAccountPasswordInput">请输入当前登录密码以确认身份：</label>
+          <input type="password" id="deleteAccountPasswordInput" class="form-input" placeholder="输入密码确认注销">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary close-modal">取消</button>
+        <button id="btnConfirmDeleteAccount" class="btn-danger" style="background: rgba(239, 68, 68, 0.2); color: #EF4444; border: 1px solid #EF4444; padding: 8px 16px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;">确认永久注销</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: GROUP MEMBERS VIEW -->
+  <div id="modalGroupMembersView" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">群成员列表</h3>
+        <button class="icon-btn close-modal">
+          <svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="groupMembersListContainer" style="display: flex; flex-direction: column; gap: 8px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 5: MOBILE PHONE SYNC & PWA INSTALL -->
+  <div id="modalMobileSync" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 400px; text-align: center;">
+      <div class="modal-header">
+        <h3 class="modal-title">📱 手机端即开即用指南</h3>
+        <button class="icon-btn close-modal">
+          <svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
+        <!-- Network Switch Tabs -->
+        <div style="display: flex; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 3px; width: 100%; gap: 4px;">
+          <button id="btnTabPublicNet" style="flex: 1; padding: 6px 0; font-size: 12px; font-weight: 600; border-radius: 6px; background: var(--gradient-brand); color: white; transition: all 0.2s;">🌐 广域网/外网联机</button>
+          <button id="btnTabLanNet" style="flex: 1; padding: 6px 0; font-size: 12px; font-weight: 600; border-radius: 6px; background: transparent; color: var(--text-muted); transition: all 0.2s;">📶 局域网同一WiFi</button>
+        </div>
+
+        <img id="mobileQrImg" src="" style="border-radius: 12px; border: 1px solid var(--glass-border); width: 150px; height: 150px; background: white; padding: 6px;" alt="手机扫码">
+        
+        <div id="mobileAddressDisplay" style="font-size: 12.5px; color: var(--text-primary); font-weight: 600; word-break: break-all;">
+          外网访问地址: <a id="mobilePublicLink" href="#" target="_blank" style="color: #00F2FE;">加载中...</a>
+        </div>
+        <button id="btnCopyMobileLink" class="btn-secondary" style="font-size: 12px; padding: 6px 14px; border-radius: 6px;">📋 一键复制分享链接发给朋友</button>
+        
+        <!-- Direct Download Buttons -->
+        <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 4px;">
+          <a id="btnDlApk" href="/downloads/Linkey-Android.apk" download="Linkey-Android.apk" class="btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; padding: 9px 18px; border-radius: var(--radius-md); font-weight: 600; background: linear-gradient(135deg, #00C6FF, #0072FF); color: white; width: 100%; box-sizing: border-box; font-size: 13px;">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>📱 下载安卓手机版 APK 安装包</span>
+          </a>
+          <a id="btnDlPc" href="/downloads/Linkey-PC.zip" download="Linkey-PC.zip" class="btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; padding: 8px 18px; border-radius: var(--radius-md); font-weight: 600; width: 100%; box-sizing: border-box; font-size: 12.5px;">
+            <svg class="svg-icon" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            <span>💻 下载 Windows 电脑客户端安装包 (.zip)</span>
+          </a>
+        </div>
+
+        <div style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.6; text-align: left; background: rgba(255, 255, 255, 0.04); padding: 10px 12px; border-radius: var(--radius-md); border: 1px solid var(--glass-border-light); width: 100%; box-sizing: border-box;">
+          <strong>💡 异地跨网络联机说明：</strong><br>
+          🔹 将上方【外网访问地址】直接微信/QQ 发送给朋友；<br>
+          🔹 朋友用手机直接点击链接打开即玩，或安装 APK 后秒速加入房间！
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-primary close-modal" style="width: 100%;">我知道了</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: USER PROFILE CARD (QQ 豪华个人信息卡片) -->
+  <div id="modalUserProfileCard" class="modal-overlay" style="display: none;">
+    <div class="modal-content profile-card-modal">
+      <div id="userCardCover" class="profile-card-cover cover-aurora">
+        <button class="profile-card-close close-modal" title="关闭">
+          <svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="profile-card-body">
+        <div class="profile-card-header-row">
+          <div class="profile-card-avatar-wrap">
+            <img id="userCardAvatar" class="profile-card-avatar" src="" alt="avatar">
+            <span id="userCardStatusDot" class="status-dot online"></span>
+          </div>
+          <div class="profile-card-theme-picker" title="切换个性装扮封面">
+            <span class="theme-dot" style="background: linear-gradient(135deg, #0052D4, #00F2FE);" data-theme="aurora"></span>
+            <span class="theme-dot" style="background: linear-gradient(135deg, #FF007F, #7928CA);" data-theme="cyberpunk"></span>
+            <span class="theme-dot" style="background: linear-gradient(135deg, #FA709A, #FEE140);" data-theme="sunset"></span>
+            <span class="theme-dot" style="background: linear-gradient(135deg, #0A58CA, #00D2FF);" data-theme="ocean"></span>
+            <span class="theme-dot" style="background: linear-gradient(135deg, #F857A6, #FF5858);" data-theme="sakura"></span>
+          </div>
+        </div>
+
+        <div class="profile-card-names">
+          <div class="profile-card-nickname-row">
+            <h3 id="userCardNickname" class="profile-card-nickname"></h3>
+            <span id="userCardStatusLabel" class="profile-card-status-badge online">🟢 在线</span>
+          </div>
+          <div class="profile-card-qq-row">
+            <span id="userCardQQNumber" class="profile-card-qq"></span>
+            <span style="color: rgba(255,255,255,0.2);">|</span>
+            <span id="userCardRegDays">常驻 QQ 达人</span>
+          </div>
+        </div>
+
+        <!-- Badges Wall (勋章墙) -->
+        <div class="profile-badge-wall">
+          <span id="userCardBadgeLevel" class="badge-item stars">👑 ☀️ 🌙 ⭐️ Lv.28</span>
+          <span id="userCardBadgeDiamond" class="badge-item diamond">💎 空间黄钻 Lv.6</span>
+          <span class="badge-item music">🎵 音乐绿钻</span>
+          <span class="badge-item flame">🔥 巨轮好友</span>
+        </div>
+
+        <!-- Bio & Dossier (个性签名与空间档案) -->
+        <div class="profile-card-dossier">
+          <div>
+            <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">个性签名</div>
+            <p id="userCardBio" class="profile-card-bio-text">这个人很懒，什么都没写~</p>
+          </div>
+          <div class="profile-card-stats-row">
+            <div>
+              <div id="userCardPostsCount" class="stat-item-num">12</div>
+              <div class="stat-item-label">空间动态</div>
+            </div>
+            <div>
+              <div id="userCardVisitorsCount" class="stat-item-num">1,280</div>
+              <div class="stat-item-label">空间访客</div>
+            </div>
+            <div>
+              <div id="userCardIntimacy" class="stat-item-num">99°C</div>
+              <div class="stat-item-label">亲密度</div>
+            </div>
+          </div>
+          <!-- 亲密度温度计（宽度由 openUserProfileCard 按 intimacy_score 驱动） -->
+          <div class="intimacy-meter"><div class="intimacy-fill" id="intimacyFill" style="width:0%"></div></div>
+        </div>
+
+        <!-- Tags Row (个性标签) -->
+        <div id="userCardTagsRow" class="profile-tags-row">
+          <span class="tag-chip">🚀 极客代码</span>
+          <span class="tag-chip">🎮 游戏高玩</span>
+          <span class="tag-chip">🎧 音乐控</span>
+          <span class="tag-chip">✨ 乐在沟通</span>
+        </div>
+
+        <!-- Pixel-Perfect Aligned Action Buttons -->
+        <div class="profile-card-actions">
+          <button id="btnUserCardSendMessage" class="profile-action-btn btn-primary" type="button">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>发消息</span>
+          </button>
+          <button id="btnUserCardAddFriend" class="profile-action-btn btn-primary" type="button" style="display: none;">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+            <span>➕ 加好友</span>
+          </button>
+          <button id="btnUserCardOpenZone" class="profile-action-btn btn-zone" type="button">
+            <svg class="svg-icon" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span>进空间</span>
+          </button>
+          <button id="btnUserCardPoke" class="profile-action-btn btn-secondary" type="button">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+            <span>戳一戳</span>
+          </button>
+          <button id="btnUserCardFriendOptions" class="profile-action-btn btn-secondary" type="button" style="display: none;">
+            <span>⚙️ 关系</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD FRIEND VERIFICATION PROMPT -->
+  <div id="modalAddFriendPrompt" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 380px;">
+      <div class="modal-header">
+        <h3 class="modal-title">发送好友申请</h3>
+        <button class="icon-btn close-modal"><svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+          <img id="addFriendTargetAvatar" src="" style="width: 44px; height: 44px; border-radius: 50%;" alt="target">
+          <div>
+            <div id="addFriendTargetName" style="font-weight: 700; font-size: 14px;"></div>
+            <div id="addFriendTargetQQ" style="font-size: 12px; color: var(--text-muted);"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="addFriendMessageInput">验证申请留言</label>
+          <input type="text" id="addFriendMessageInput" class="form-input" placeholder="输入申请留言...">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary close-modal">取消</button>
+        <button id="btnConfirmSendFriendReq" class="btn-primary" style="width: auto; height: 36px; padding: 0 18px;">发送申请</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: FRIEND REQUESTS LIST (新的朋友) -->
+  <div id="modalFriendRequests" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 class="modal-title">🔔 新的朋友与好友申请</h3>
+        <button class="icon-btn close-modal"><svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <div id="friendRequestsListContainer" style="display: flex; flex-direction: column; gap: 10px; max-height: 320px; overflow-y: auto;">
+          <!-- Injected incoming friend requests -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CHANGE PASSWORD (修改密码) -->
+  <div id="modalChangePassword" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 380px;">
+      <div class="modal-header">
+        <h3 class="modal-title">🔒 修改登录密码</h3>
+        <button class="icon-btn close-modal"><svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="oldPasswordInput">原密码</label>
+          <input type="password" id="oldPasswordInput" class="form-input" placeholder="输入当前密码">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="newPasswordInput">新密码 (至少4位)</label>
+          <input type="password" id="newPasswordInput" class="form-input" placeholder="输入新密码">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="confirmNewPasswordInput">确认新密码</label>
+          <input type="password" id="confirmNewPasswordInput" class="form-input" placeholder="再次输入新密码">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary close-modal">取消</button>
+        <button id="btnConfirmChangePassword" class="btn-primary" style="width: auto; height: 36px; padding: 0 18px;">确认修改</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: GROUP SETTINGS & ADMINISTRATION (群管理与成员控制台) -->
+  <div id="modalGroupSettings" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 class="modal-title">👥 群管理与设置</h3>
+        <button class="icon-btn close-modal"><svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
+        <div class="form-group">
+          <label class="form-label" for="groupSettingsNameInput">群名称</label>
+          <input type="text" id="groupSettingsNameInput" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="groupSettingsNoticeInput">📢 群公告</label>
+          <textarea id="groupSettingsNoticeInput" class="form-input" style="height: 64px; resize: none;" placeholder="发布群公告通知全员..."></textarea>
+        </div>
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+          <button id="btnSaveGroupNotice" class="btn-primary" style="font-size: 12px; height: 30px; padding: 0 14px;">保存群设置</button>
+        </div>
+        <div class="form-group">
+          <label class="form-label">群成员列表 (<span id="groupSettingsMemberCount">0</span>人)</label>
+          <div id="groupSettingsMemberList" style="display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto;"></div>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button id="btnLeaveGroup" class="btn-danger" style="background: rgba(239, 68, 68, 0.15); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.3); padding: 8px 16px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;">退出该群</button>
+        <button class="btn-secondary close-modal">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: FORWARD MESSAGE (消息转发) -->
+  <div id="modalForwardMessage" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 380px;">
+      <div class="modal-header">
+        <h3 class="modal-title">转发消息</h3>
+        <button class="icon-btn close-modal"><svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <div id="forwardMsgPreview" style="background: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: var(--radius-sm); font-size: 13px; margin-bottom: 12px; border: 1px solid var(--glass-border-light);"></div>
+        <label class="form-label">选择转发目标：</label>
+        <div id="forwardTargetList" style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: DEDICATED FULL-FEATURED QQ ZONE (正式全功能 QQ 空间主页) -->
+  <div id="modalDedicatedQzone" class="modal-overlay" style="display: none;">
+    <div class="modal-content dedicated-qzone-modal">
+      <div id="qzoneHeroHeader" class="qzone-hero-header cover-aurora">
+        <button class="qzone-hero-header-close close-modal" title="关闭空间">
+          <svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <div class="qzone-hero-profile">
+          <img id="qzoneHeroAvatar" class="qzone-hero-avatar" src="" alt="avatar">
+          <div class="qzone-hero-meta">
+            <div class="qzone-hero-name">
+              <span id="qzoneHeroName">QQ 空间</span>
+              <span id="qzoneHeroVipBadge" class="badge-item diamond" style="font-size: 11px;">💎 黄钻 Lv.6</span>
+            </div>
+            <div class="qzone-hero-visitors">
+              今日访客 <span id="qzoneTodayVisitors" style="color: #00F2FE; font-weight: 700;">18</span> · 空间总访客 <span id="qzoneTotalVisitors" style="color: #FFB703; font-weight: 700;">1,420</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="qzone-nav-bar">
+        <div class="qzone-sub-tab active" data-tab="posts">
+          <span>📝</span> <span>说说动态</span>
+        </div>
+        <div class="qzone-sub-tab" data-tab="photos">
+          <span>📷</span> <span>相册照片</span>
+        </div>
+        <div class="qzone-sub-tab" data-tab="guestbook">
+          <span>💬</span> <span>空间留言板</span>
+        </div>
+        <div class="qzone-sub-tab" data-tab="about">
+          <span>👤</span> <span>个人档</span>
+        </div>
+      </div>
+
+      <div class="qzone-main-scroll">
+        <!-- Sub-View 1: 说说动态 -->
+        <div id="qzoneViewPosts" class="qzone-view-section">
+          <div class="zone-publisher">
+            <textarea id="qzoneInputText" class="zone-input" placeholder="写下你此刻的想法或新鲜事说说..."></textarea>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+              <button id="btnQzoneSelectPhotos" class="tool-btn" type="button" style="font-size: 12px; height: 28px;">
+                <svg class="svg-icon" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <span>配图</span>
+              </button>
+              <input type="file" id="qzonePostPhotoInput" accept="image/*" multiple style="display: none;">
+              <button id="btnPublishQzonePost" class="btn-primary" style="width: auto; height: 34px; padding: 0 18px; font-size: 12.5px;">发表说说</button>
+            </div>
+            <div id="qzonePostImagePreviews" style="display: none; flex-wrap: wrap; gap: 6px; margin-top: 8px;"></div>
+          </div>
+          <div id="qzonePostsList" style="display: flex; flex-direction: column; gap: 14px; margin-top: 14px;">
+            <!-- Posts with comments rendered here -->
+          </div>
+        </div>
+
+        <!-- Sub-View 2: 相册照片 -->
+        <div id="qzoneViewPhotos" class="qzone-view-section" style="display: none;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <h4 style="font-size: 14px; color: var(--text-primary); margin: 0;">📸 空间相册墙</h4>
+              <span id="qzonePhotoCount" style="font-size: 12px; color: var(--text-muted);">共 0 张照片</span>
+            </div>
+            <button id="btnUploadAlbumPhoto" class="btn-primary" style="font-size: 12px; height: 28px; padding: 0 12px;">📷 上传照片</button>
+            <input type="file" id="albumPhotoFileInput" accept="image/*" style="display: none;">
+          </div>
+          <div id="qzonePhotosGrid" class="qzone-gallery-grid">
+            <!-- Photos rendered here -->
+          </div>
+        </div>
+
+        <!-- Sub-View 3: 留言板 -->
+        <div id="qzoneViewGuestbook" class="qzone-view-section" style="display: none;">
+          <div class="zone-publisher" style="margin-bottom: 14px;">
+            <textarea id="qzoneGuestbookInput" class="zone-input" placeholder="在好友空间留言板写下你的温情寄语..."></textarea>
+            <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
+              <button id="btnPublishGuestbook" class="btn-primary" style="width: auto; height: 34px; padding: 0 18px; font-size: 12.5px;">提交留言</button>
+            </div>
+          </div>
+          <div id="qzoneGuestbookList" style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Guestbook messages rendered here -->
+          </div>
+        </div>
+
+        <!-- Sub-View 4: 个人档 -->
+        <div id="qzoneViewAbout" class="qzone-view-section" style="display: none;">
+          <div class="guestbook-card">
+            <h4 style="font-size: 15px; color: var(--text-primary); margin-bottom: 8px;">👤 详细个人档案</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px;">
+              <div><strong>QQ 号码：</strong><span id="qzoneAboutQQ" style="color: #00F2FE;">-</span></div>
+              <div><strong>QQ 等级：</strong><span id="qzoneAboutLevel" style="color: #FFB703;">-</span></div>
+              <div><strong>空间装扮：</strong><span>流光极客特权</span></div>
+              <div><strong>在线状态：</strong><span id="qzoneAboutStatus">在线</span></div>
+              <div><strong>星座档案：</strong><span>双子座 / 极客探索者</span></div>
+              <div><strong>注册时光：</strong><span>加入 Linkey 社区 98 天</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTEXT MENU FOR MESSAGES (撤回、回复、转发、删除) -->
+  <div id="msgContextMenu" class="msg-context-menu" style="display: none;">
+    <div class="ctx-item" id="ctxQuoteReply">💬 引用回复</div>
+    <div class="ctx-item" id="ctxForwardMsg">↪️ 转发消息</div>
+    <div class="ctx-item" id="ctxRecallMsg" style="display: none;">↩️ 撤回消息</div>
+    <div class="ctx-item danger" id="ctxDeleteMsg">🗑️ 删除</div>
+  </div>
+
+  <!-- CONTEXT MENU FOR CONVERSATIONS (置顶、清空记录) -->
+  <div id="convContextMenu" class="msg-context-menu" style="display: none;">
+    <div class="ctx-item" id="ctxPinConv">📌 置顶会话</div>
+    <div class="ctx-item" id="ctxClearConv">🧹 清空聊天记录</div>
+  </div>
+
+  <!-- LIGHTBOX FOR IMAGES -->
+  <div id="imageLightbox" class="lightbox-overlay" style="display: none;">
+    <button id="lightboxClose" class="lightbox-close" title="关闭大图">
+      <svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <img id="lightboxImg" class="lightbox-img" src="" alt="大图查看">
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- APP MAIN MODULE -->
+  <script src="/js/qr.js?v=4.3.6-localqr"></script>
+  <script type="module" src="/js/app.js?v=4.3.5-dynpoll"></script>
+</body>
+</html>
